@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Description & Resume Matcher</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f7fa;
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    max-width: 800px;
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    padding: 20px;
+  }
+  h2 {
+    text-align: center;
+    color: #333;
+  }
+  .form-group {
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  textarea {
+    width: 100%;
+    height: 120px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: vertical;
+  }
+  input[type="file"] {
+    display: block;
+    margin-top: 5px;
+  }
+  button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #45a049;
+  }
+  .status {
+    margin-top: 20px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Job Description & Resume Matcher</h2>
+  <form id="matchForm">
+    <div class="form-group">
+      <label for="jd">Job Description (paste here):</label>
+      <textarea id="jd" name="jd" placeholder="Enter or paste Job Description here..."></textarea>
+      <label>OR Upload JD File:</label>
+      <input type="file" id="jdFile" accept=".txt,.pdf,.doc,.docx">
+    </div>
+
+    <div class="form-group">
+      <label>Upload Resume:</label>
+      <input type="file" id="resumeFile" accept=".pdf,.doc,.docx">
+    </div>
+
+    <div class="form-group" style="text-align:center;">
+      <button type="submit">Check Match</button>
+    </div>
+
+    <div class="status" id="status"></div>
+  </form>
+</div>
+
+<script>
+  document.getElementById('matchForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = 'Processing...';
+
+    const formData = new FormData();
+
+    // Append JD text if provided
+    const jdText = document.getElementById('jd').value.trim();
+    if (jdText) {
+      formData.append('jd_text', jdText);
+    }
+
+    // Append JD file if uploaded
+    const jdFile = document.getElementById('jdFile').files[0];
+    if (jdFile) {
+      formData.append('jd_file', jdFile);
+    }
+
+    // Append Resume file
+    const resumeFile = document.getElementById('resumeFile').files[0];
+    if (!resumeFile) {
+      statusDiv.textContent = 'Please upload a resume file.';
+      return;
+    }
+    formData.append('resume_file', resumeFile);
+
+    try {
+      const response = await fetch('/match', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('Server error');
+
+      const data = await response.json();
+
+      statusDiv.innerHTML = `
+        <h3>Result</h3>
+        <p><strong>Match Percentage:</strong> ${data.match_percentage}%</p>
+        <p><strong>Matching Skills:</strong> ${data.matching_skills.join(', ')}</p>
+        <p><strong>Missing Skills:</strong> ${data.missing_skills.join(', ')}</p>
+      `;
+    } catch (err) {
+      statusDiv.textContent = 'Error: ' + err.message;
+    }
+  });
+</script>
+</body>
+</html>
