@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from functools import wraps
 import requests, json
-import mammoth
+import docx2txt
+from PyPDF2 import PdfReader
 from pydantic import BaseModel, EmailStr
 import hashlib
 app = FastAPI()
@@ -81,18 +82,11 @@ def extract_text(file: UploadFile) -> str:
                 text += page_text + "\n"
         return text
     elif file.filename.endswith(".docx"):
-        # mammoth needs a file path, so save temporarily
-        temp_path = "temp.docx"
-        with open(temp_path, "wb") as temp_file:
+        # docx2txt needs a file path, so save temporarily
+        with open("temp.docx", "wb") as temp_file:
             temp_file.write(file.file.read())
-
-        with open(temp_path, "rb") as docx_file:
-            result = mammoth.extract_raw_text(docx_file)
-            text = result.value
-
+        text = docx2txt.process("temp.docx")
         return text
-    
-
     elif file.filename.endswith(".txt"):
         return file.file.read().decode()
     else:
